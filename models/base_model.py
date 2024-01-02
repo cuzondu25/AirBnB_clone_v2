@@ -3,27 +3,36 @@
 import uuid
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, Date
+from sqlalchemy import Column, String, DateTime
 
 Base = declarative_base()
 class BaseModel:
     """A base class for all hbnb models"""
-    id =  Column(String(60), primary_key=True)
-    created_at = Column(Date, nullable=True, default=datetime.utcnow())
-    updated_at = Column(Date, nullable=True, default=datetime.utcnow())
+    id =  Column("id", String(60), primary_key=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow())
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow())
 
     def __init__(self, *args, **kwargs):
         """Instatntiates a new model"""
         if not kwargs:
-            from models import storage
             self.id = str(uuid.uuid4())
             self.created_at = datetime.now()
             self.updated_at = datetime.now()
+
         else:
             """ instance attribute from this dictionary.
-                Ex: kwargs={ 'name': "California" } => self.name = "California
-                """
-            self.name = kwargs['name']
+            Ex: kwargs={ 'name': "California" } => self.name = "California
+            """
+            tform = "%Y-%m-%dT%H:%M:%S.%f"
+            if "id" not in kwargs:
+                self.id = str(uuid.uuid4())
+            for k, v in kwargs.items():
+                if k == "created_at" or k == "updated_at":
+                    self.__dict__[k] = datetime.strptime(v, tform)
+                elif k == "__class__":
+                    continue
+                else:
+                    self.__dict__[k] = v
 
     def __str__(self):
         """Returns a string representation of the instance"""

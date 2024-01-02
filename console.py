@@ -133,34 +133,69 @@ class HBNBCommand(cmd.Cmd):
         # creates an instance with a list of kwargs
         if args[2]:
             args_list = args[2].split(" ")
-            arg_dict = {}
+            kwargs = {}               # dictionary of kwargs
+            args_lst = []                   # list of args
 
             for arg in args_list:
                 if arg:
                     arg = re.sub('[\'\"]+', '', arg) #remove excess single or double quotes
-                    arg = arg.replace('_', ' ') #replace '_' with space
-                    arg_dict[(arg.split('=')[0])] = arg.split('=')[1]
+                    if re.search('=', arg):
+                        split = arg.split('=')
+                        split[1] = split[1].replace('_', ' ')   # replace '_' with whitespace
+                        kwargs[(split[0])] = split[1]
+                    else:
+                        args_lst.append(arg)
                 
-            #creates a new instance with kwargs
-            #update <className> <id> <attName> <attVal>
+            #creates a new instance with args or kwargs
+            
+            # first determine if kwargs or args
+            if kwargs and not args_lst:
+                args = []  # reformat kwargs into list, ex: [<name>, <value>, ...]
+                line = []
+                for k, v in kwargs.items():
+                    args.append(k)
+                    args.append(v)
+            # isolate args
+            elif args_lst and not kwargs:
+                args = args_lst
+
+            # create a class object
             new_instance = HBNBCommand.classes[c_name]()
-            storage.save()
-            new_instance_id = (new_instance.id)
-            line = '{} {} {}'.format(c_name, new_instance_id, arg_dict)
-            self.do_update(line)
+
+            # iterate through attr names and values
+            for i, att_name in enumerate(args):
+                # block only runs on even iterations
+                if (i % 2 == 0):
+                    att_val = args[i + 1]  # following item is value
+                    if not att_name:  # check for att_name
+                        print("** attribute name missing **")
+                        return
+                    if not att_val:  # check for att_value
+                        print("** value missing **")
+                        return
+                    # type cast as necessary
+                    if att_name in HBNBCommand.types:
+                        att_val = HBNBCommand.types[att_name](att_val)
+
+                    # update dictionary with name, value pair
+                    new_instance.__dict__.update({att_name: att_val})
+
+            new_instance.save()  # save updates to file
             print(new_instance.id)
-        
         
         #creates an a new instance
         else:
             new_instance = HBNBCommand.classes[c_name]()
+            storage.new(new_instance)
             storage.save()
             print(new_instance.id)
 
     def help_create(self):
         """ Help information for the create method """
         print("Creates a class of any type")
-        print("[Usage]: create <className>\n")
+        print("[Usage]: create <className>")
+        print("[Usage]: create <className> <kwargs>\n")
+        print("[Usage]: create <className> <key> <value>")
 
     def do_show(self, args):
         """ Method to show an individual object """
@@ -218,7 +253,7 @@ class HBNBCommand(cmd.Cmd):
         key = c_name + "." + c_id
 
         try:
-            del(storage.all()[key])
+            storage.delete(storage.all()[key])
             storage.save()
         except KeyError:
             print("** no instance found **")
@@ -237,11 +272,11 @@ class HBNBCommand(cmd.Cmd):
             if args not in HBNBCommand.classes:
                 print("** class doesn't exist **")
                 return
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all().items():
                 if k.split('.')[0] == args:
                     print_list.append(str(v))
         else:
-            for k, v in storage._FileStorage__objects.items():
+            for k, v in storage.all().items():
                 print_list.append(str(v))
 
         print(print_list)
