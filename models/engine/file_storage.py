@@ -26,7 +26,7 @@ class FileStorage:
             for key in FileStorage.__objects.keys():
                 if FileStorage.__objects[key] == obj:
                     del FileStorage.__objects[key]
-                break
+                    break
             self.save()
 
     def new(self, obj):
