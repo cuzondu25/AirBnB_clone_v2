@@ -20,6 +20,28 @@ class FileStorage:
                     cls_dict[key] = FileStorage.__objects[key]
             return cls_dict
 
+    def get(self, cls, id):
+        """A method to retrieve one object based on the object id"""
+        import re
+        self.reload()
+        cls_obj = self.all(cls)
+
+        id_obj = [obj for key, obj in cls_obj.items() if re.search(id, key)]
+        if id_obj:
+            return id_obj[0]
+        else:
+            return None
+
+    def count(self, cls=None):
+        """method to count the number of objects in storage"""
+        #self.reload()
+        if cls == None:
+            cls_obj = self.all()
+            return len(cls_obj)
+        else:
+            cls_obj = self.all(cls)
+            return len(cls_obj)
+
     def delete(self, obj=None):
         """ to delete obj from __objects if it’s inside """
         if obj:
@@ -65,3 +87,6 @@ class FileStorage:
                         self.all()[key] = classes[val['__class__']](**val)
         except FileNotFoundError:
             pass
+
+    def close(self):
+        self.reload()

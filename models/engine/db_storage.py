@@ -54,7 +54,26 @@ class DBStorage:
                 for obj in cls_obj:
                     cls_dict.update({obj.__class__.__name__ + "." + obj.id: obj})
             return cls_dict
-            
+
+    def get(self, cls, id):
+        import re
+        cls_obj = self.all(cls)
+
+        id_obj = [obj for key, obj in cls_obj.items() if re.search(id, key)]
+        if id_obj:
+            return id_obj[0]
+        else:
+            return None
+
+    def count(self, cls=None):
+        """method to count the number of objects in storage"""
+        self.reload()
+        if cls == None:
+            cls_obj = self.all()
+            return len(cls_obj)
+        else:
+            cls_obj = self.all(cls)
+            return len(cls_obj)    
 
     def new(self, obj):
         """add the object to the current database session (self.__session)"""
@@ -83,3 +102,5 @@ class DBStorage:
         Session = scoped_session(session)
         self.__session = Session()
 
+    def close(self):
+        self.__session.close()
